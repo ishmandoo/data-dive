@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Table View</title>
+    <style>
+        td pre {
+            max-width: 400px;
+            overflow-x: auto;
+            margin: 0;
+            padding: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            max-width: 400px;
+            overflow-x: auto;
+            white-space: nowrap;
+            padding: 8px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        textarea {
+            width: 100%;
+            resize: vertical;
+        }
+
+        hr {
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+    </style>
+    <script>
+        const vscode = acquireVsCodeApi();
+
+        function executeCommand() {
+            const textAreas = document.querySelectorAll('textarea');
+            const lastTextArea = textAreas[textAreas.length - 1];
+            vscode.postMessage({
+                command: 'execute',
+                query: lastTextArea.value
+            });
+        }
+
+        function deactivate() {
+            const textAreas = document.querySelectorAll('textarea');
+
+            textAreas.forEach(textArea => {
+                textArea.disabled = true;
+            });
+        }
+
+        function add(html) {
+            deactivate();
+
+            addResults(html);
+            addTextArea("");
+        }
+
+        function addResults(tableHTML) {
+            const replDiv = document.getElementById('repl');
+
+            const results = document.createElement('div');
+            results.classList.add('active');
+            results.innerHTML = tableHTML;
+
+            replDiv.appendChild(results);
+            replDiv.appendChild(document.createElement("hr"));
+        }
+
+
+        function addTextArea(value) {
+            const replDiv = document.getElementById('repl');
+
+            const newTextArea = document.createElement('textarea');
+            newTextArea.rows = 4;
+            newTextArea.cols = 50;
+            newTextArea.value = value
+
+            replDiv.appendChild(newTextArea);
+        }
+
+        window.addEventListener('message', event => {
+            const message = event.data;
+            switch (message.command) {
+                case 'showResult':
+                    add(message.tableHTML);
+                    break;
+                case 'showError':
+                    add(message.error)
+                    break;
+                case 'init':
+                    addTextArea(message.query)
+                    vscode.postMessage({
+                        command: 'execute',
+                        query: message.query
+                    });
+                    break;
+            }
+        });
+
+    </script>
+</head>
+
+<body>
+
+    <div id='repl'>
+    </div>
+    <button onclick="executeCommand()">Execute</button>
+
+</body>
+
+</html>
